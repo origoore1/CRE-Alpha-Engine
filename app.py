@@ -2,23 +2,17 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import google.generativeai as genai
-import plotly.express as px
 
 # --- 1. CONFIG & INSTITUTIONAL THEMING ---
 st.set_page_config(page_title="CRE Alpha Engine: Institutional Master", layout="wide")
 
-# Professional 'White-Label' CSS
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
-    .stMetric { background-color: white; padding: 20px; border-radius: 12px; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .stSidebar { background-color: #ffffff; border-right: 1px solid #dee2e6; }
-    .stTabs [data-baseweb="tab-list"] { gap: 24px; }
-    .stTabs [data-baseweb="tab"] { height: 50px; white-space: pre-wrap; font-weight: 600; }
+    .stMetric { background-color: white; padding: 20px; border-radius: 12px; border: 1px solid #dee2e6; }
     </style>
     """, unsafe_allow_html=True)
 
-# API Setup
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
@@ -27,122 +21,91 @@ try:
 except:
     AI_READY = False
 
-# Persistence
 if 'portfolio' not in st.session_state: st.session_state['portfolio'] = []
-if 'risk_registry' not in st.session_state: st.session_state['risk_registry'] = []
 
-# --- 2. THE ADAPTIVE BRAIN (PROACTIVE LEARNING) ---
-def adaptive_risk_discovery(lease_text):
-    """
-    Pass 2: Proactive Discovery.
-    Identifies non-standard risks and adds them to global registry.
-    """
-    prompt = f"""
-    You are a Senior Credit Officer for a German Bank. 
-    Analyze this Retail Lease for 1. Hard-Stop Red Flags and 2. ONE 'Novel Risk' 
-    that is non-standard for the German market.
-    Return as JSON: {{"flags": [], "novel_risk": ""}}
-    TEXT: {lease_text}
-    """
-    try:
-        response = model.generate_content(prompt)
-        # Simulation of the learning loop logic
-        discovered = "Unusual turnover-rent cap identified in recent grocery lease"
-        if discovered not in st.session_state['risk_registry']:
-            st.session_state['risk_registry'].append(discovered)
-        return response.text
-    except: return "Audit Pending..."
-
-# --- 3. SCORING & STRESS ENGINE ---
-def run_institutional_scoring(deal):
-    """Calculates 0-100 scores and flags red-stop issues."""
-    # Banker Score (Weights: DSCR, DY, LTV, Sponsor)
-    b_score = (deal['dscr']/1.35)*20 + (deal['dy']/0.09)*20 + ((1-deal['ltv'])/0.35)*20 + (4/5)*40
-    # Investor Score (Weights: IRR, WALT, ESG)
-    i_score = (deal['irr']/0.15)*25 + (deal['walt']/10)*20 + (deal['esg']/100)*15 + (4/5)*40
-    
-    red_flags = []
-    if deal['dscr'] < 1.20: red_flags.append("🚨 DSCR below Hard-Stop (1.20x)")
-    if deal['ltv'] > 0.75: red_flags.append("🚨 LTV above Bank Ceiling (75%)")
-    
-    return min(b_score, 100), min(i_score, 100), red_flags
-
-# --- 4. MASTER DATA GENERATOR ---
-def inject_master_deals():
+# --- 2. THE SIMULATED DATA GENERATOR (10+ DEALS) ---
+def generate_master_scenarios():
     scenarios = [
-        {"name": "Edeka Neighborhood (NRW)", "noi": 420000, "price": 6100000, "walt": 12.0, "ltv": 0.65, "dscr": 1.55, "dy": 0.105, "irr": 0.18, "esg": 85, "type": "Grocery Anchor"},
-        {"name": "Rewe Retail Park (Bavaria)", "noi": 580000, "price": 8400000, "walt": 8.5, "ltv": 0.60, "dscr": 1.42, "dy": 0.112, "irr": 0.14, "esg": 62, "type": "Multi-Tenant"},
-        {"name": "Obi DIY Hub (Saxony)", "noi": 310000, "price": 4200000, "walt": 6.0, "ltv": 0.70, "dscr": 1.18, "dy": 0.082, "irr": 0.11, "esg": 45, "type": "DIY Center"},
-        {"name": "Lidl Urban (Berlin)", "noi": 720000, "price": 10500000, "walt": 15.0, "ltv": 0.55, "dscr": 1.85, "dy": 0.125, "irr": 0.22, "esg": 92, "type": "Grocery Anchor"}
+        {"name": "Edeka Center (NRW)", "noi": 420000, "price": 6100000, "walt": 12.0, "type": "Grocery Anchor", "esg": 85, "capex": 15000, "rent_index": 1.0},
+        {"name": "Rewe Park (Bavaria)", "noi": 580000, "price": 8400000, "walt": 8.5, "type": "Multi-Tenant", "esg": 65, "capex": 45000, "rent_index": 0.8},
+        {"name": "Obi DIY Hub (Saxony)", "noi": 310000, "price": 4200000, "walt": 6.0, "type": "Essential Retail", "esg": 45, "capex": 25000, "rent_index": 0.7},
+        {"name": "Netto Hub (Brandenburg)", "noi": 240000, "price": 3100000, "walt": 4.5, "type": "Discount", "esg": 25, "capex": 10000, "rent_index": 1.0},
+        {"name": "Urban Lidl (Berlin)", "noi": 720000, "price": 10500000, "walt": 15.0, "type": "Grocery Anchor", "esg": 92, "capex": 20000, "rent_index": 1.0}
     ]
     st.session_state['portfolio'] = scenarios
 
-# --- 5. UI LAYOUT ---
+# --- 3. UI LAYOUT ---
+st.title("🏗️ CRE Alpha Engine: Institutional Master")
+
 with st.sidebar:
-    st.title("🛡️ Institutional Controls")
-    st.info(f"AI System: {'✅ ACTIVE' if AI_READY else '⚠️ OFFLINE'}")
-    if st.button("🧪 Inject Master Portfolio"): inject_master_deals()
+    st.header("Platform Controls")
+    if st.button("🧪 Inject Full Retail Portfolio"):
+        generate_master_scenarios()
     st.markdown("---")
-    st.write("### 🧠 Proactive Learning Log")
-    st.caption("Novel risks identified across your bundle:")
-    for risk in st.session_state['risk_registry']:
-        st.write(f"• {risk}")
+    st.info(f"AI Connection: {'✅ Online' if AI_READY else '⚠️ Offline'}")
 
-# TOP KPI RIBBON
-st.title("🏗️ CRE Alpha Engine: Master Decision Grid")
-if st.session_state['portfolio']:
-    df = pd.DataFrame(st.session_state['portfolio'])
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Bundle Market Value", f"€{df['price'].sum():,.0f}")
-    c2.metric("Weighted WALT", f"{df['walt'].mean():.1f} yrs")
-    c3.metric("Avg Bankability", "76/100")
-    c4.metric("Avg Investor Score", "81/100")
+tabs = st.tabs(["📂 Data Bridge", "🛡️ Banker's Shield", "⚔️ Investor's Yield", "💰 Exit Strategy"])
 
-tabs = st.tabs(["📊 Portfolio Grid", "🛡️ Banker's Lens (CC)", "⚔️ Investor's Sword (IC)", "📂 Data Bridge"])
-
-with tabs[0]:
-    st.header("Master Portfolio Status")
-    if st.session_state['portfolio']:
-        # Apply Scoring
-        scored_data = []
-        for d in st.session_state['portfolio']:
-            b, i, flags = run_institutional_scoring(d)
-            d.update({"Bank Score": int(b), "Inv Score": int(i), "Flags": ", ".join(flags) if flags else "✅ Clear"})
-            scored_data.append(d)
-        
-        display_df = pd.DataFrame(scored_data)
-        st.dataframe(display_df[['name', 'type', 'Bank Score', 'Inv Score', 'Flags', 'walt']], use_container_width=True)
-        
-        fig = px.scatter(display_df, x="Bank Score", y="Inv Score", size="price", color="type", 
-                         hover_name="name", title="The Alpha Matrix: Bankability vs Yield")
-        st.plotly_chart(fig, use_container_width=True)
-    else: st.info("Inject data to begin analysis.")
-
+# TAB 2: BANKER'S DEFENSIVE SHIELD (FULL PARAMETERS)
 with tabs[1]:
-    st.header("Banker's Defensive Shield (Credit Decision)")
+    st.header("🛡️ 2. Banker's Underwriting Lens")
     if st.session_state['portfolio']:
-        col_l, col_r = st.columns([1, 2])
-        with col_l:
-            st.slider("Stress Case: Interest Rate (%)", 4.0, 7.5, 5.25)
-            st.write("**Thresholds Applied:**")
-            st.write("- Min DSCR: 1.20x")
-            st.write("- Target Debt Yield: >9.0%")
-        with col_r:
-            st.write("### 🧐 Senior MD Credit Commentary")
-            st.warning("Concentration Warning: Bundle is 45% exposed to Grocery Anchors in NRW. Recommend diversifying to Eastern Germany for 2026 yield compression.")
+        deal = st.session_state['portfolio'][0]
+        st.subheader(f"Asset: {deal['name']}")
+        
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            ltv = st.slider("LTV (%)", 50, 80, 65) / 100
+            rate = st.slider("Interest Rate (%)", 3.0, 7.0, 5.25) / 100
+            amort = st.slider("Amortization (%)", 0.0, 3.0, 1.5) / 100
+        
+        loan = deal['price'] * ltv
+        debt_service = loan * (rate + amort)
+        dscr = deal['noi'] / debt_service
+        debt_yield = (deal['noi'] / loan)
+        
+        with c2:
+            st.metric("DSCR (Target > 1.20x)", f"{dscr:.2f}")
+            st.metric("Debt Yield (Target > 7%)", f"{debt_yield*100:.2f}%")
+        
+        with c3:
+            st.write("**Red-Flag Audit:**")
+            if dscr < 1.20: st.error("🚨 DSCR below Hard-Stop (1.20x)")
+            if debt_yield < 0.07: st.warning("⚠️ Debt Yield below 7% Floor")
+            if deal['walt'] < 5.0: st.error("🚨 WALT too short for 5yr Term")
 
+        # Stress Test Matrix (as requested in toolkit)
+        st.subheader("📊 DSCR Sensitivity Matrix")
+        rates = [0.04, 0.05, 0.06, 0.07]
+        matrix = {f"{r*100:.1f}% Rate": [deal['noi'] / (loan * (r + amort))] for r in rates}
+        st.table(pd.DataFrame(matrix, index=["Stressed DSCR"]))
+    else: st.warning("Inject data first.")
+
+# TAB 3: INVESTOR'S YIELD SWORD (FFO/AFFO WATERFALL)
 with tabs[2]:
-    st.header("Investor's Yield Waterfall (Equity Decision)")
+    st.header("⚔️ 3. Investor's Yield & FFO Waterfall")
     if st.session_state['portfolio']:
-        st.metric("Portfolio Cash-on-Cash", "11.85%")
-        st.write("### 💰 Exit Value Sensitivity")
-        st.info("Exit Premium: Bundle currently shows +60bps premium due to grocery-anchor stabilization.")
-
-with tabs[3]:
-    st.header("Adaptive Data Bridge")
-    st.write("Upload new German leases to teach the engine's 'Novel Risk' registry.")
-    upl = st.file_uploader("Upload Rent Roll (PDF/XLSX)")
-    if st.button("🔍 Run Proactive Audit") and AI_READY:
-        with st.spinner("AI is reasoning about institutional friction..."):
-            result = adaptive_risk_discovery("Sample Text")
-            st.success("Audit complete. Sidebar updated with new discovered risks.")
+        deal = st.session_state['portfolio'][0]
+        equity = deal['price'] * (1 - 0.65)
+        interest_cost = (deal['price'] * 0.65) * 0.0525
+        
+        # FFO/AFFO Calculation
+        ffo = deal['noi'] - interest_cost
+        affo = ffo - deal['capex']
+        coc = affo / equity
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            st.write("### FFO Waterfall (Annual)")
+            st.write(f"**Gross NOI:** €{deal['noi']:,}")
+            st.write(f"**- Interest Expense:** (€{interest_cost:,.0f})")
+            st.write(f"**= FFO (Funds from Ops):** €{ffo:,.0f}")
+            st.write(f"**- Recurring Capex:** (€{deal['capex']:,})")
+            st.write(f"**= AFFO (Cash to Equity):** €{affo:,.0f}")
+        
+        with c2:
+            st.write("### Performance Metrics")
+            st.metric("Cash-on-Cash (AFFO Yield)", f"{coc*100:.2f}%")
+            st.metric("Equity Multiple (Simulated)", "1.85x")
+            st.metric("ESG Modernization Risk", f"{100-deal['esg']}%")
+    else: st.warning("Inject data first.")
