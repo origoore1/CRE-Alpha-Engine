@@ -14,7 +14,7 @@ st.markdown("""
     .stMetric { background-color: white; padding: 15px; border-radius: 10px; border: 1px solid #e9ecef; }
     .stSidebar { background-color: #ffffff; border-right: 1px solid #e9ecef; }
     </style>
-    """, unsafe_allow_allow_html=True)
+    """, unsafe_allow_html=True)
 
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
