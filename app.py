@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import google.generativeai as genai
+import plotly.express as px
 
-# --- 1. CONFIG & INSTITUTIONAL THEMING ---
-st.set_page_config(page_title="CRE Alpha Engine: Institutional Master", layout="wide")
+# --- 1. CONFIG & INSTITUTIONAL THEME ---
+st.set_page_config(page_title="CRE Alpha Engine: Full Stack", layout="wide")
 
 st.markdown("""
     <style>
@@ -23,89 +24,132 @@ except:
 
 if 'portfolio' not in st.session_state: st.session_state['portfolio'] = []
 
-# --- 2. THE SIMULATED DATA GENERATOR (10+ DEALS) ---
-def generate_master_scenarios():
-    scenarios = [
-        {"name": "Edeka Center (NRW)", "noi": 420000, "price": 6100000, "walt": 12.0, "type": "Grocery Anchor", "esg": 85, "capex": 15000, "rent_index": 1.0},
-        {"name": "Rewe Park (Bavaria)", "noi": 580000, "price": 8400000, "walt": 8.5, "type": "Multi-Tenant", "esg": 65, "capex": 45000, "rent_index": 0.8},
-        {"name": "Obi DIY Hub (Saxony)", "noi": 310000, "price": 4200000, "walt": 6.0, "type": "Essential Retail", "esg": 45, "capex": 25000, "rent_index": 0.7},
-        {"name": "Netto Hub (Brandenburg)", "noi": 240000, "price": 3100000, "walt": 4.5, "type": "Discount", "esg": 25, "capex": 10000, "rent_index": 1.0},
-        {"name": "Urban Lidl (Berlin)", "noi": 720000, "price": 10500000, "walt": 15.0, "type": "Grocery Anchor", "esg": 92, "capex": 20000, "rent_index": 1.0}
+# --- 2. THE MASTER DATA GENERATOR (FULL PARAMETERS) ---
+def generate_institutional_portfolio():
+    # Incorporating parameters from your toolkit: NOI, Capex, Opex, EPC
+    assets = [
+        {
+            "name": "Edeka Center (NRW)", 
+            "price": 6100000, 
+            "noi": 420000, 
+            "opex": 45000, 
+            "capex": 15000,
+            "interest_rate": 0.0525,
+            "amortization": 0.015,
+            "ltv": 0.65,
+            "walt": 12.0,
+            "epc": 2, # EPC Grade A-G
+            "type": "Grocery Anchor"
+        },
+        {
+            "name": "Rewe Retail Park (Bavaria)", 
+            "price": 8400000, 
+            "noi": 580000, 
+            "opex": 62000, 
+            "capex": 35000,
+            "interest_rate": 0.0525,
+            "amortization": 0.015,
+            "ltv": 0.60,
+            "walt": 8.5,
+            "epc": 4,
+            "type": "Multi-Tenant"
+        }
     ]
-    st.session_state['portfolio'] = scenarios
+    st.session_state['portfolio'] = assets
 
 # --- 3. UI LAYOUT ---
-st.title("🏗️ CRE Alpha Engine: Institutional Master")
+st.title("🏗️ CRE Alpha Engine: Institutional Workstation")
 
 with st.sidebar:
     st.header("Platform Controls")
-    if st.button("🧪 Inject Full Retail Portfolio"):
-        generate_master_scenarios()
+    if st.button("🧪 Inject Full-Stack Portfolio"):
+        generate_institutional_portfolio()
     st.markdown("---")
-    st.info(f"AI Connection: {'✅ Online' if AI_READY else '⚠️ Offline'}")
+    st.info(f"AI System: {'✅ Active' if AI_READY else '⚠️ Offline'}")
 
-tabs = st.tabs(["📂 Data Bridge", "🛡️ Banker's Shield", "⚔️ Investor's Yield", "💰 Exit Strategy"])
+tabs = st.tabs(["📂 Portfolio View", "🛡️ Banker (Credit)", "⚔️ Investor (Equity)", "📂 Red-Flag Audit"])
 
-# TAB 2: BANKER'S DEFENSIVE SHIELD (FULL PARAMETERS)
+# TAB 1: PORTFOLIO GRID
+with tabs[0]:
+    if st.session_state['portfolio']:
+        df = pd.DataFrame(st.session_state['portfolio'])
+        st.write("### Portfolio Composition")
+        st.dataframe(df[['name', 'type', 'noi', 'price', 'walt']])
+        
+        # High-level metrics based on toolkit
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Total Bundle Price", f"€{df['price'].sum():,.0f}")
+        c2.metric("Total Portfolio NOI", f"€{df['noi'].sum():,.0f}")
+        c3.metric("Weighted WALT", f"{df['walt'].mean():.1f} yrs")
+    else: st.info("Inject data to begin.")
+
+# TAB 2: BANKER LENS (CREDIT DECISION)
 with tabs[1]:
-    st.header("🛡️ 2. Banker's Underwriting Lens")
+    st.header("🛡️ Banker's Credit Framework")
     if st.session_state['portfolio']:
         deal = st.session_state['portfolio'][0]
-        st.subheader(f"Asset: {deal['name']}")
+        st.subheader(f"Analyzing: {deal['name']}")
         
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            ltv = st.slider("LTV (%)", 50, 80, 65) / 100
-            rate = st.slider("Interest Rate (%)", 3.0, 7.0, 5.25) / 100
-            amort = st.slider("Amortization (%)", 0.0, 3.0, 1.5) / 100
-        
+        # Banker-specific sliders from toolkit
+        col_l, col_r = st.columns(2)
+        with col_l:
+            rate = st.slider("Interest Rate (%)", 3.0, 7.5, deal['interest_rate']*100) / 100
+            amort = st.slider("Amortization (%)", 0.0, 3.0, deal['amortization']*100) / 100
+            ltv = st.slider("LTV (%)", 50, 80, int(deal['ltv']*100)) / 100
+            
         loan = deal['price'] * ltv
         debt_service = loan * (rate + amort)
         dscr = deal['noi'] / debt_service
-        debt_yield = (deal['noi'] / loan)
+        debt_yield = deal['noi'] / loan
         
-        with c2:
-            st.metric("DSCR (Target > 1.20x)", f"{dscr:.2f}")
+        with col_r:
+            st.metric("DSCR (Target > 1.20x)", f"{dscr:.2f}", delta="Safe" if dscr > 1.20 else "Risk")
             st.metric("Debt Yield (Target > 7%)", f"{debt_yield*100:.2f}%")
-        
-        with c3:
-            st.write("**Red-Flag Audit:**")
-            if dscr < 1.20: st.error("🚨 DSCR below Hard-Stop (1.20x)")
-            if debt_yield < 0.07: st.warning("⚠️ Debt Yield below 7% Floor")
-            if deal['walt'] < 5.0: st.error("🚨 WALT too short for 5yr Term")
+            st.metric("Annual Debt Service", f"€{debt_service:,.0f}")
 
-        # Stress Test Matrix (as requested in toolkit)
-        st.subheader("📊 DSCR Sensitivity Matrix")
-        rates = [0.04, 0.05, 0.06, 0.07]
-        matrix = {f"{r*100:.1f}% Rate": [deal['noi'] / (loan * (r + amort))] for r in rates}
-        st.table(pd.DataFrame(matrix, index=["Stressed DSCR"]))
-    else: st.warning("Inject data first.")
-
-# TAB 3: INVESTOR'S YIELD SWORD (FFO/AFFO WATERFALL)
+# TAB 3: INVESTOR LENS (FFO/AFFO WATERFALL)
 with tabs[2]:
-    st.header("⚔️ 3. Investor's Yield & FFO Waterfall")
+    st.header("⚔️ Investor's Yield Sword")
     if st.session_state['portfolio']:
         deal = st.session_state['portfolio'][0]
-        equity = deal['price'] * (1 - 0.65)
-        interest_cost = (deal['price'] * 0.65) * 0.0525
+        equity = deal['price'] * (1 - deal['ltv'])
+        interest_exp = (deal['price'] * deal['ltv']) * deal['interest_rate']
         
-        # FFO/AFFO Calculation
-        ffo = deal['noi'] - interest_cost
-        affo = ffo - deal['capex']
+        # FFO Calculation
+        ffo = deal['noi'] - interest_exp
+        affo = ffo - deal['capex'] # Subtracting recurring capex
         coc = affo / equity
         
-        c1, c2 = st.columns(2)
-        with c1:
-            st.write("### FFO Waterfall (Annual)")
+        col_w1, col_w2 = st.columns(2)
+        with col_l:
+            st.write("### FFO Waterfall")
             st.write(f"**Gross NOI:** €{deal['noi']:,}")
-            st.write(f"**- Interest Expense:** (€{interest_cost:,.0f})")
+            st.write(f"**- Interest Expense:** (€{interest_exp:,.0f})")
             st.write(f"**= FFO (Funds from Ops):** €{ffo:,.0f}")
             st.write(f"**- Recurring Capex:** (€{deal['capex']:,})")
             st.write(f"**= AFFO (Cash to Equity):** €{affo:,.0f}")
         
-        with c2:
-            st.write("### Performance Metrics")
+        with col_r:
+            st.write("### Yield Metrics")
             st.metric("Cash-on-Cash (AFFO Yield)", f"{coc*100:.2f}%")
-            st.metric("Equity Multiple (Simulated)", "1.85x")
-            st.metric("ESG Modernization Risk", f"{100-deal['esg']}%")
+            st.metric("EPC/ESG Risk Grade", deal['epc'])
     else: st.warning("Inject data first.")
+
+# TAB 4: RED-FLAG AUDIT
+with tabs[3]:
+    st.header("🚨 Institutional Red-Flag Audit")
+    if st.session_state['portfolio']:
+        deal = st.session_state['portfolio'][0]
+        # Red Flag Logic from your Toolkit
+        flags = []
+        if deal['noi'] / (deal['price'] * deal['ltv'] * deal['interest_rate']) < 1.20:
+            flags.append("🚨 DSCR below Hard-Stop (1.20x)")
+        if deal['ltv'] > 0.65:
+            flags.append("🚨 LTV above Bank Threshold (65%)")
+        if deal['epc'] > 5:
+            flags.append("🚨 Environmental/EPC Risk too high")
+        
+        if flags:
+            for f in flags: st.error(f)
+        else:
+            st.success("✅ Deal cleared all primary Red-Flag checks.")
