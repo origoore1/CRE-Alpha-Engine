@@ -1,0 +1,406 @@
+======================================================================
+GRU PLATFORM AUDIT REPORT — 2026-05-02
+======================================================================
+
+FILES AUDITED (19)
+----------------------------------------
+  ai_monitor.py
+  app 7.py
+  bank_submission.py
+  constants.py
+  dd_scanner 7.py
+  deal_converter 7.py
+  deal_converter 8.py
+  deal_scanner.py
+  deal_simulator.py
+  deal_supervisor.py
+  decision_dashboard.py
+  intake_deal.py
+  launch.py
+  practice_deals 8.py
+  practice_deals7.py
+  rent_roll_parser 7.py
+  session_journal.py
+  test_deal_supervisor.py
+  test_engine.py
+
+
+ISSUES FOUND (111 total)
+======================================================================
+
+🟡 STALE FILES (1)
+------------------------------------------------------------
+  [rent_roll_parser.py]
+    Old/copy file 'rent_roll_parser.py' exists alongside current
+        version. Risk of accidental import. (Not auto-deleted —
+        manual review required.)
+
+🟡 HARDCODED THRESHOLDS (74)
+------------------------------------------------------------
+  [app 7.py:1191]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:1192]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:1254]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:1839]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:1839]
+    Literal `1.5` used directly — should reference `ICR_WARN` from
+        constants.py
+  [app 7.py:1839]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [app 7.py:1841]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:1841]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [app 7.py:1841]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:2767]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:3095]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:3103]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:3108]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [app 7.py:3438]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:3502]
+    Literal `20.0` used directly — should reference `VOID_HOLD_RATE`
+        from constants.py
+  [app 7.py:3505]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:3509]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:3847]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:3892]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:3990]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:3990]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:3992]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [app 7.py:3992]
+    Literal `1.5` used directly — should reference `ICR_WARN` from
+        constants.py
+  [app 7.py:3994]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:3994]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [app 7.py:4473]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:4522]
+    Literal `20.0` used directly — should reference `VOID_HOLD_RATE`
+        from constants.py
+  [app 7.py:4524]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:4526]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:5761]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:5764]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:5783]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:5945]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:5945]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:5947]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:5947]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:5949]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:5949]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:5955]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [app 7.py:5955]
+    Literal `1.5` used directly — should reference `ICR_WARN` from
+        constants.py
+  [app 7.py:5957]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [app 7.py:5957]
+    Literal `1.5` used directly — should reference `ICR_WARN` from
+        constants.py
+  [app 7.py:5959]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [app 7.py:5959]
+    Literal `1.5` used directly — should reference `ICR_WARN` from
+        constants.py
+  [app 7.py:5965]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:5965]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [app 7.py:5967]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:5967]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [app 7.py:5969]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [app 7.py:5969]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [app 7.py:6219]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:6220]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [app 7.py:6274]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [app 7.py:6277]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [decision_dashboard.py:62]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [decision_dashboard.py:72]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [launch.py:292]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [launch.py:294]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [launch.py:383]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [launch.py:409]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [launch.py:411]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [launch.py:1317]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [launch.py:1322]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [launch.py:1327]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [rent_roll_parser 7.py:520]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [rent_roll_parser 7.py:520]
+    Literal `0.7` used directly — should reference `LTV_WARN` from
+        constants.py
+  [rent_roll_parser 7.py:526]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [rent_roll_parser 7.py:526]
+    Literal `1.3` used directly — should reference `DSCR_PASS` from
+        constants.py
+  [rent_roll_parser 7.py:534]
+    Literal `1.75` used directly — should reference `ICR_PASS` from
+        constants.py
+  [rent_roll_parser 7.py:534]
+    Literal `1.5` used directly — should reference `ICR_WARN` from
+        constants.py
+  [rent_roll_parser 7.py:546]
+    Literal `0.65` used directly — should reference `LTV_PASS` from
+        constants.py
+  [rent_roll_parser 7.py:599]
+    Literal `1.5` used directly — should reference `ICR_WARN` from
+        constants.py
+  [test_deal_supervisor.py:218]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+  [test_deal_supervisor.py:227]
+    Literal `1.2` used directly — should reference `DSCR_WARN` from
+        constants.py
+
+🟠 SIGNATURE MISMATCHES (27)
+------------------------------------------------------------
+  [app 7.py:2258]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [app 7.py:3822]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [app 7.py:2259]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [app 7.py:3823]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [app 7.py:2257]
+    `compute_metrics()` called with ~4 args but signature expects 47
+        params. Verify manually.
+  [app 7.py:3821]
+    `compute_metrics()` called with ~3 args but signature expects 47
+        params. Verify manually.
+  [bank_submission.py:956]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [bank_submission.py:957]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [bank_submission.py:955]
+    `compute_metrics()` called with ~3 args but signature expects 47
+        params. Verify manually.
+  [deal_simulator.py:526]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [deal_simulator.py:527]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [deal_simulator.py:525]
+    `compute_metrics()` called with ~3 args but signature expects 47
+        params. Verify manually.
+  [intake_deal.py:366]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [intake_deal.py:367]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [intake_deal.py:365]
+    `compute_metrics()` called with ~3 args but signature expects 47
+        params. Verify manually.
+  [launch.py:1149]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [launch.py:1150]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [launch.py:1148]
+    `compute_metrics()` called with ~4 args but signature expects 47
+        params. Verify manually.
+  [practice_deals 8.py:594]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [practice_deals 8.py:595]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [practice_deals 8.py:593]
+    `compute_metrics()` called with ~3 args but signature expects 47
+        params. Verify manually.
+  [practice_deals7.py:873]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [practice_deals7.py:874]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [practice_deals7.py:872]
+    `compute_metrics()` called with ~3 args but signature expects 47
+        params. Verify manually.
+  [test_engine.py:60]
+    `run_qa_audit()` called with ~2 args but signature expects 7
+        params. Verify manually.
+  [test_engine.py:61]
+    `generate_verdict()` called with ~2 args but signature expects
+        20 params. Verify manually.
+  [test_engine.py:59]
+    `compute_metrics()` called with ~3 args but signature expects 47
+        params. Verify manually.
+
+⚪ UNUSED IMPORTS (9)
+------------------------------------------------------------
+  [ai_monitor.py:21]
+    Import `import json` — name `json` not used in file body.
+  [ai_monitor.py:27]
+    Import `import subprocess` — name `subprocess` not used in file
+        body.
+  [ai_monitor.py:46]
+    Import `import requests as _req` — name `_req` not used in file
+        body.
+  [deal_converter 7.py:379]
+    Import `import shutil` — name `shutil` not used in file body.
+  [deal_converter 8.py:401]
+    Import `import shutil` — name `shutil` not used in file body.
+  [practice_deals 8.py:13]
+    Import `import io, shutil, sys, argparse` — name `io,` not used
+        in file body.
+  [practice_deals7.py:13]
+    Import `import io, shutil, sys, argparse` — name `io,` not used
+        in file body.
+  [test_engine.py:16]
+    Import `import shutil` — name `shutil` not used in file body.
+  [test_engine.py:17]
+    Import `import tempfile` — name `tempfile` not used in file
+        body.
+
+
+FIXES APPLIED (0)
+======================================================================
+  None
+
+
+PYTEST RESULT
+======================================================================
+  ........................................F............................... [ 48%]
+  ........................................................................ [ 97%]
+  ...                                                                      [100%]
+  ================================== FAILURES ===================================
+  ________________ TestWAULT.test_wault_within_tolerance[deal_6] ________________
+  test_engine.py:265: in test_wault_within_tolerance
+      assert abs(wault_engine - wault_exp) <= WAULT_TOL, (
+  E   AssertionError: 
+  E     Deal 6: WAULT from engine 4.7921yr  expected 7.2395yr  (diff 2.4473yr, tol ±0.2yr)
+  E   assert 2.4473350725667053 <= 0.2
+  E    +  where 2.4473350725667053 = abs((4.79213530608332 - 7.239470378650025))
+  ============================== warnings summary ===============================
+  test_engine.py: 14 warnings
+    C:\Users\iritg\retail_underwriter\rent_roll_parser 7.py:213: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '[]' has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+      df.loc[_has_break, "unexpired_yrs"] = df.loc[_has_break, "unexpired_yrs"].combine(
+  
+  -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+  =========================== short test summary info ===========================
+  FAILED test_engine.py::TestWAULT::test_wault_within_tolerance[deal_6] - Asser...
+  1 failed, 146 passed, 14 warnings in 7.46s
+
+  Exit code: 1 (FAIL)
+
+======================================================================
+END OF REPORT
+======================================================================

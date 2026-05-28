@@ -1,0 +1,94 @@
+========================================================================
+  AI CAPABILITIES UPDATE
+  What's New and How It Applies to GRU
+  Generated: 10 April 2026  |  ai_monitor.py v1.0
+========================================================================
+
+  GRU = German Retail Underwriter (Lahav L.R. internal tool)
+  This report is auto-generated. Verify all links before acting.
+
+========================================================================
+  SECTION 1 · ANTHROPIC / CLAUDE UPDATES
+========================================================================
+
+RSS Feed Items
+------------------------------------------------------------------------
+  (RSS feeds unavailable or returned no items)
+
+Search Results — Claude & Anthropic
+------------------------------------------------------------------------
+
+  如何看待2026年2月24日Anthropic公司声称中国实验室对Claude模型大 …
+  https://www.zhihu.com/question/2009482926241382805
+  如何看待2026年2月24日Anthropic公司声称中国实验室对Claude模型大规模蒸馏并点名？
+  Anthropic的公告部分原文翻译如下： “我们发现，三家 AI 实验室——DeepSeek、Moonshot 和
+  MiniMax——开展 …
+
+  美国政府「首次封杀」全球头部大模型企业，美联邦机构停用Anthropic …
+  https://www.zhihu.com/question/2011015637259028204
+  Feb 28, 2026 · 美国政府「首次封杀」全球头部大模型企业，美联邦机构停用Anthropic产品，会对市场造成何种影响？
+  突发！ 特朗普下令禁用Anthropic AI，系美国政府首次“封杀”头部大模型公司_腾讯新 …
+
+  怎么看 Anthropic 刚发的《Building effective agents》这篇文章？
+  https://www.zhihu.com/question/7370549265
+  Anthropic这篇文章对Agent这个概念做了非常精确（仅指语言意义上的“精确”）的定义。
+  在Anthropic的定义之下，我们实际面临的大部分工作都应该是Workflow，而不是Agent！ 而为了完成某 …
+
+  如何评价 Anthropic 最新发布的 Claude Opus 4.6?有哪些技术亮点值得 …
+  https://www.zhihu.com/question/2002929122574373858
+  Coding（编码） 这就更是Opus 4.6的天下了。Opus
+  4.6规划更周密，可在大型代码库中稳定运行，代码审查、调试能力升级，能自主发现自身错误。（其实我感觉Opus
+  4.5这方面的能力已经强得很明显 …
+
+  如何看待 Anthropic 9 月 4 日发布 Claude Code 禁止中国控股公司使用？
+  https://www.zhihu.com/question/1947342097465205321
+  Sep 5, 2025 · 特别是Agent以及Coding这两个方面，相信年底国内梯队就会有一个大的跃升。
+  国内搞AI有个特点，你老美要是验证过一个方向可行，那中美之间在这个方向的差距可以立马缩短到3-6个月。  …
+
+  如何评价 Anthropic 最新发布的 Claude Opus 4.5?有哪些技术亮点值得 …
+  https://www.zhihu.com/question/1976512213163480579
+  Anthropic同步更新了Claude Code命令行工具。
+  最值得关注的是"计划模式"：启用后，模型在改代码之前会先生成一份详细的计划文档，让开发者有机会在代码生成前进行审核。
+  实测数据显示，不用计划 …
+
+========================================================================
+  SECTION 2 · AI TOOLS FOR REAL ESTATE & FINANCIAL ANALYSIS
+========================================================================
+  (No search results returned)
+
+========================================================================
+  SECTION 3 · GRU IMPACT ASSESSMENT
+========================================================================
+
+  For each capability found across Sections 1 and 2,
+  one-line note on whether/how it could improve GRU.
+
+    •  [claude opus 4]  Most capable reasoning — stronger SWOT narratives and scenario analysis in Deep Insights
+    •  [agent]  Autonomous screener: ingest broker PDF → populate Excel template → return IC memo draft
+    •  [claude code]  Directly used to build GRU; longer sessions + improved context = fewer re-explorations
+
+========================================================================
+  SECTION 4 · STANDING RECOMMENDATIONS
+========================================================================
+
+  These apply regardless of new announcements:
+
+    •  CLAUDE.md context  — keep it updated as GRU evolves; Claude Code sessions
+                       use it as ground truth and save ~15 min re-exploration each time
+
+    •  Export to Claude   — test every new model release against the 12 practice deals;
+                       copy Claude Export → new chat → ask 'which deal should I buy?'
+
+    •  DD Scanner gap     — scanned PDFs still return 'Manual review required'; top priority
+                       fix is a Vision API or native PDF ingestion layer
+
+    •  ERV data gap       — Module 4 (True Yield Gap) uses heuristics; live market data API
+                       (gif.de, bulwiengesa, or JLL API) would make it institutional-grade
+
+    •  MCP integration    — GRU engine functions (run_qa_audit, generate_verdict) could be
+                       exposed as MCP tools for Claude Desktop — analysts ask in plain language
+
+========================================================================
+  End of report  |  Next run: 17 April 2026
+  ai_monitor.py v1.0  |  2026-04-10
+========================================================================

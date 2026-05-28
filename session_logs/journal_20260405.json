@@ -1,0 +1,22 @@
+[
+  {
+    "timestamp": "2026-04-05T16:32:39",
+    "deal_name": "Test Deal — Regensburg",
+    "verdict": "PASS",
+    "metrics": {
+      "giy": 0.072,
+      "niy": null,
+      "dscr": 1.45,
+      "icr": 2.1,
+      "ltv": 0.62,
+      "wault": 5.3,
+      "vacancy": 0.04,
+      "noi": 420000.0,
+      "asking": 5800000.0
+    },
+    "ri_signals": {
+      "Edeka": "GREEN"
+    },
+    "note": "Test entry — smoke test"
+  }
+]

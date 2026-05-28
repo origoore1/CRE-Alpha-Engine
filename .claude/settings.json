@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import sys,json,subprocess,re; d=json.load(sys.stdin); f=d.get('tool_input',{}).get('file_path',''); re.search(r'(rent_roll_parser|constants\\.py)',f) and subprocess.run(['python','-m','pytest','test_engine.py','-v','--tb=short'],cwd='C:/Users/iritg/retail_underwriter')\" 2>/dev/null || true",
+            "timeout": 120,
+            "statusMessage": "Running regression tests..."
+          },
+          {
+            "type": "command",
+            "command": "python -c \"import sys,json,subprocess,re; d=json.load(sys.stdin); f=d.get('tool_input',{}).get('file_path',''); m=re.search(r'(app 7\\.py|rent_roll_parser 7\\.py|constants\\.py)',f); m and subprocess.run(['python','-m','py_compile',f],cwd='C:/Users/iritg/retail_underwriter')\" 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Syntax checking..."
+          }
+        ]
+      }
+    ]
+  }
+}
