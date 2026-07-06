@@ -31,7 +31,7 @@
 |------|---------|
 | `app 7.py` | Main Streamlit app entry point |
 | `rent_roll_parser 7.py` | Parses rent roll Excel inputs |
-| `dd_scanner.py` | PDF lease due diligence scanner (pdfplumber) |
+| `dd_scanner 7.py` | PDF lease due diligence scanner (pdfplumber) — the plain `dd_scanner.py` was stale and is archived |
 | `practice_deals.py` | Practice deal generator (8 deals, expanding to 30) |
 | `audit_agent.py` | Detects import mismatches, stale files, hardcoded values |
 | `bank_submission.py` | (GRU Lender Pack) German credit memo PDF generator |
@@ -105,7 +105,11 @@ Two-module add-on that takes GRU from underwriting verdict → bank-ready submis
 - **[FIXED]** `app 7.py` was silently importing stale `rent_roll_parser.py` instead of `rent_roll_parser 7.py` — caused WAULT to compute incorrectly. Always verify import paths.
 - **[FIXED]** WAULT now correctly shows 0.9 years for Kerken Retail Center / Woolworth deal (anchor with ~2 months to break option).
 - **[FIXED]** Vacant units with missing values (instead of zero) caused calculation errors — all vacant rows must have explicit 0.
-- **[KNOWN]** Verdict mismatches in practice deals 5 and 7 — not yet resolved.
+- **[RESOLVED 2026-07-06]** The old "deals 5 and 7 mismatch" note was stale — both match their intended verdicts. The real drift was deal 12 (see next item).
+- **[FIXED 2026-07-06]** Practice deals decayed over real time: lease dates are literals, so WAULT shrank every month and verdicts silently flipped (deal 12 drifted from its designed INVESTIGATE to DECLINE). Fix: `generate_practice_deal()` now shifts lease dates by (today − design_date), so every deal keeps its designed WAULT and verdict forever. Deals may carry their own `"design_date"`; the default is `DESIGN_DATE_DEFAULT` in `practice_deals7.py`. When authoring NEW deals, set `design_date` to the authoring date.
+- **[NOTE 2026-07-06]** NIY convention decided: `niy` = NOI ÷ asking price (GRU original); `niy_on_tac` = NOI ÷ total acquisition cost incl. GrESt (German market convention — use THIS when comparing against JLL/CBRE benchmarks).
+- **[CLEANUP 2026-07-06]** 17 dead/duplicate files (עותק copies, stale parser/scanner versions, empty launch.py) moved to `archive\`. Live modules are only those listed in the Architecture table. Never import anything from `archive\`.
+- **[FIXED 2026-07-06]** Regression suite failed on all 12 deals from time drift: WAULT is computed from `date.today()` but baselines are static, so the suite went red ~4 days after baselines were generated (±0.01yr tolerance ≈ 3.65 days). Fix: `tests/test_regression.py` now freezes the engine clock to the baseline date (2026-05-28). If baselines are ever regenerated, update `BASELINE_AS_OF` in the test to the regeneration date.
 
 ---
 

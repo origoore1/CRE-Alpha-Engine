@@ -23,12 +23,34 @@ spec = importlib.util.spec_from_file_location(
 rrp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rrp)
 
+# ── freeze the clock ─────────────────────────────────────────────────────────
+# WAULT depends on date.today(): as real time passes, every lease gets shorter,
+# so comparing WAULT against static baselines fails ~4 days after the baselines
+# were generated (tolerance ±0.01 yr ≈ 3.65 days). Freeze the engine's clock to
+# the baseline generation date (2026-05-28) so the suite tests CODE changes,
+# not the passage of time. The live app is unaffected — it still uses today.
+import datetime as _dt
+
+BASELINE_AS_OF = _dt.date(2026, 7, 6)
+
+
+class _FrozenDate(_dt.date):
+    @classmethod
+    def today(cls):
+        return cls(BASELINE_AS_OF.year, BASELINE_AS_OF.month, BASELINE_AS_OF.day)
+
+
+rrp.date = _FrozenDate
+
 # ── load practice deals generator ────────────────────────────────────────────
 spec2 = importlib.util.spec_from_file_location(
     "practice_deals7", ROOT / "practice_deals7.py"
 )
 pd7 = importlib.util.module_from_spec(spec2)
 spec2.loader.exec_module(pd7)
+# Freeze the generator's clock too: generate_practice_deal() shifts lease dates
+# by (today − design_date), so generator and engine must agree on "today".
+pd7.date = _FrozenDate
 
 # ── load baselines ────────────────────────────────────────────────────────────
 BASELINES = json.loads(

@@ -2032,6 +2032,42 @@ def main():
             help="Use DE_Retail_Underwriter_Template.xlsx"
         )
 
+        # ── PRACTICE MODE ─────────────────────────────────────────────
+        st.divider()
+        st.markdown("### 🎓 Practice Mode")
+        _pd_dir = pathlib.Path(__file__).parent / "practice_deals"
+        _pd_files = sorted(_pd_dir.glob("*.xlsx")) if _pd_dir.exists() else []
+        if _pd_files:
+            # Build display names: "01 · PASS · Textbook NVZ — Edeka + dm Augsburg"
+            def _pd_label(p):
+                parts = p.stem.split("_", 3)   # ['Practice','01','BEGINNER','PASS_Title...']
+                num     = parts[1] if len(parts) > 1 else "?"
+                verdict = parts[3].split("_")[0] if len(parts) > 3 else "?"
+                title   = "_".join(parts[3].split("_")[1:]).replace("_", " ") if len(parts) > 3 else p.stem
+                return f"{num} · {verdict} · {title[:45]}"
+
+            _pd_labels  = ["— select a deal —"] + [_pd_label(f) for f in _pd_files]
+            _pd_sel     = st.selectbox("Load practice deal", _pd_labels, key="_pd_select",
+                                       label_visibility="collapsed")
+
+            _col_load, _col_clear = st.columns(2)
+            if _col_load.button("▶ Load", key="_pd_load", use_container_width=True):
+                if _pd_sel != "— select a deal —":
+                    _pd_idx = _pd_labels.index(_pd_sel) - 1
+                    with open(_pd_files[_pd_idx], "rb") as _pf:
+                        st.session_state["_practice_bytes"] = _pf.read()
+                        st.session_state["_practice_label"] = _pd_sel
+                    st.rerun()
+            if _col_clear.button("✕ Clear", key="_pd_clear", use_container_width=True):
+                st.session_state.pop("_practice_bytes", None)
+                st.session_state.pop("_practice_label", None)
+                st.rerun()
+
+            if st.session_state.get("_practice_label") and not uploaded_file:
+                st.success(f"📂 {st.session_state['_practice_label'][:50]}")
+        else:
+            st.caption("No practice deals found. Run `practice_deals_100.py` first.")
+
         st.divider()
         st.markdown("### Model Assumptions")
 
@@ -2066,6 +2102,10 @@ def main():
         loan_type_key = "Annuity" if "Annuity" in loan_type else "Linear"
 
         io_years = 0  # IO period removed — always full amortising debt service
+
+        # Practice deal fallback — treat stored bytes as if user uploaded the file
+        if uploaded_file is None and st.session_state.get("_practice_bytes"):
+            uploaded_file = io.BytesIO(st.session_state["_practice_bytes"])
 
         # Reset share deal toggle and parser cache whenever file content changes
         if uploaded_file is not None:
@@ -2242,12 +2282,85 @@ def main():
                 st.error(f"Results display error: {_dse2}")
 
     if not uploaded_file:
-        st.info("Upload your populated `DE_Retail_Underwriter_Template.xlsx` to begin.")
+        st.info("Upload your populated `DE_Retail_Underwriter_Template.xlsx` to begin — or load a practice deal from the sidebar.")
         st.markdown("""
         **This tool calculates:**  DSCR · ICR · LTV · GIY · NIY · WAULT ·
         Anchor concentration · 10-year levered IRR · Exit cap sensitivity heatmap ·
         Itemised NOI from Cost Sheet · Pass / Investigate / Decline verdict
         """)
+
+        # ── BATCH PRACTICE RUN ─────────────────────────────────────────
+        _pd_dir2 = pathlib.Path(__file__).parent / "practice_deals"
+        _pd_files2 = sorted(_pd_dir2.glob("*.xlsx")) if _pd_dir2.exists() else []
+        if _pd_files2:
+            with st.expander("📊 Run all practice deals — batch summary", expanded=False):
+                st.caption(f"{len(_pd_files2)} deals · shows engine verdict and key metrics for each")
+                if st.button("▶ Run all now", key="_pd_batch_run"):
+                    _batch_rows = []
+                    _prog = st.progress(0, text="Running…")
+                    for _bi, _bf in enumerate(_pd_files2):
+                        _prog.progress((_bi + 1) / len(_pd_files2), text=f"{_bf.stem[:40]}…")
+                        try:
+                            with open(_bf, "rb") as _bfh:
+                                _bdata = io.BytesIO(_bfh.read())
+                            _bd    = rrp.load_deal_overview(_bdata)
+                            _brr   = rrp.load_rent_roll(_bdata)
+                            _bact  = _brr[~_brr["is_vacant"]]
+                            _bvac  = _brr[_brr["is_vacant"]]
+                            _bcosts = rrp.load_cost_sheet(
+                                _bdata,
+                                rr_gross_rent  = float(_bact["annual_rent"].sum()),
+                                rr_gla_total   = float(_brr["area_sqm"].sum()),
+                                rr_vacant_area = float(_bvac["area_sqm"].sum()),
+                            )
+                            _bm  = rrp.compute_metrics(_bd, _brr, _bcosts)
+                            _bqa = rrp.run_qa_audit(_bm, _bd)
+                            _bv  = rrp.generate_verdict(_bm, _bqa)
+                            _parts = _bf.stem.split("_", 3)
+                            _batch_rows.append({
+                                "#":       _parts[1] if len(_parts) > 1 else "?",
+                                "Difficulty": _parts[2] if len(_parts) > 2 else "?",
+                                "Verdict": _bv["recommendation"],
+                                "Deal":    (_parts[3].split("_",1)[-1].replace("_"," ")[:40]
+                                            if len(_parts) > 3 else _bf.stem[:40]),
+                                "DSCR":   round(_bm.get("dscr") or 0, 2),
+                                "LTV":    f"{(_bm.get('ltv') or 0):.0%}",
+                                "WAULT":  round(_bm.get("wault") or 0, 1),
+                                "GIY":    f"{(_bm.get('giy') or 0):.2%}",
+                                "NIY":    f"{(_bm.get('niy') or 0):.2%}",
+                                "Vac":    f"{(_bm.get('vacancy_rate') or 0):.0%}",
+                                "Flags":  len([r for r in _bqa if r.status in ("FAIL","WARN")
+                                               and r.severity in ("RED","YELLOW")]),
+                            })
+                        except Exception as _be:
+                            _batch_rows.append({
+                                "#": _bf.stem[9:11], "Difficulty": "?",
+                                "Verdict": "ERROR", "Deal": str(_be)[:50],
+                                "DSCR": 0, "LTV": "?", "WAULT": 0,
+                                "GIY": "?", "NIY": "?", "Vac": "?", "Flags": 0,
+                            })
+                    _prog.empty()
+                    _bdf = pd.DataFrame(_batch_rows)
+
+                    def _colour_verdict(val):
+                        c = {"PASS": "background-color:#d1fae5;color:#065f46",
+                             "INVESTIGATE": "background-color:#fef3c7;color:#92400e",
+                             "DECLINE": "background-color:#fee2e2;color:#991b1b",
+                             "ERROR": "background-color:#f3f4f6;color:#6b7280"}.get(val, "")
+                        return c
+
+                    st.dataframe(
+                        _bdf.style.applymap(_colour_verdict, subset=["Verdict"]),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    _pass = sum(1 for r in _batch_rows if r["Verdict"] == "PASS")
+                    _inv  = sum(1 for r in _batch_rows if r["Verdict"] == "INVESTIGATE")
+                    _dec  = sum(1 for r in _batch_rows if r["Verdict"] == "DECLINE")
+                    _err  = sum(1 for r in _batch_rows if r["Verdict"] == "ERROR")
+                    st.caption(f"✅ {_pass} PASS   ⚠️ {_inv} INVESTIGATE   ❌ {_dec} DECLINE"
+                               + (f"   💥 {_err} ERROR" if _err else ""))
+
         return
 
     # ------------------------------------------------------------------

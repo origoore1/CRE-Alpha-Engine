@@ -1,0 +1,340 @@
+"""
+ratio_calculator.py — SAE Phase 1
+Computes all Module 1 financial ratios from raw data dict.
+Returns a flat dict of named ratios (all as floats or None).
+"""
+
+import numpy as np
+from typing import Optional
+
+
+# ── Math helpers ───────────────────────────────────────────────────────────────
+
+def _cagr(start: float, end: float, years: float) -> Optional[float]:
+    """Compound Annual Growth Rate. Returns None on invalid inputs."""
+    if not start or not end or years <= 0:
+        return None
+    if start <= 0 or end <= 0:
+        return None
+    return (end / start) ** (1.0 / years) - 1.0
+
+
+def _div(num, den, default=None) -> Optional[float]:
+    """Safe division."""
+    if den is None or den == 0:
+        return default
+    if num is None:
+        return default
+    return num / den
+
+
+def _last(series: list, default=None):
+    """Last (most recent) value of a series."""
+    return series[-1] if series else default
+
+
+def _at(series: list, idx: int, default=None):
+    """Safe index into a list."""
+    try:
+        return series[idx]
+    except (IndexError, TypeError):
+        return default
+
+
+def _trend(series: list) -> Optional[float]:
+    """
+    Normalised linear slope (slope / |mean|).
+    Positive = improving, negative = deteriorating.
+    Returns None if fewer than 3 points.
+    """
+    clean = [v for v in series if v is not None and not np.isnan(v)]
+    if len(clean) < 3:
+        return None
+    x = np.arange(len(clean), dtype=float)
+    slope = np.polyfit(x, clean, 1)[0]
+    mean = np.mean(clean)
+    return slope / abs(mean) if mean != 0 else None
+
+
+def _median_tax_rate(income_tax: list, pretax: list) -> float:
+    """Estimate effective tax rate from history."""
+    rates = []
+    for t, p in zip(income_tax, pretax):
+        if p and p > 0:
+            rates.append(abs(t) / p)
+    if not rates:
+        return 0.21  # default
+    rate = float(np.median(rates))
+    return max(0.05, min(0.40, rate))  # clamp to sane range
+
+
+# ── Main calculator ────────────────────────────────────────────────────────────
+
+def calculate(d: dict) -> dict:
+    """
+    d: raw data dict from data_fetcher.fetch()
+    Returns dict of all computed ratios.
+    """
+    r = {}
+
+    rev   = d["revenue"]
+    gp    = d["gross_profit"]
+    op    = d["operating_inc"]
+    ni    = d["net_income"]
+    eb    = d["ebit"]
+    ebitda= d["ebitda"]
+    ie    = d["interest_exp"]
+    tax   = d["income_tax"]
+    pre   = d["pretax_inc"]
+    da    = d["da"]
+    assets= d["total_assets"]
+    eq    = d["equity"]
+    debt  = d["total_debt"]
+    cash  = d["cash"]
+    recv  = d["receivables"]
+    ocf   = d["operating_cf"]
+    capex = d["capex"]
+    fcf   = d["free_cf"]
+    sbc   = d["sbc"]
+    ds    = d["diluted_shares"]   # diluted shares history
+    eps   = d["eps_series"]
+    gw    = d["goodwill"]
+    n     = len(rev)
+
+    # ── GROWTH ─────────────────────────────────────────────────────────────────
+
+    # Revenue CAGR
+    if n >= 4:
+        r["revenue_cagr_3yr"] = _cagr(_at(rev, -4), _last(rev), 3)
+    if n >= 6:
+        r["revenue_cagr_5yr"] = _cagr(_at(rev, -6), _last(rev), 5)
+    else:
+        r["revenue_cagr_5yr"] = _cagr(rev[0], _last(rev), n - 1)
+
+    # Gross profit CAGR
+    if gp and n >= 4:
+        r["gross_profit_cagr_3yr"] = _cagr(_at(gp, -4), _last(gp), 3)
+    if gp and n >= 2:
+        r["gross_profit_cagr_5yr"] = _cagr(gp[0], _last(gp), n - 1)
+
+    # EPS CAGR
+    ne = len(eps)
+    if ne >= 4:
+        r["eps_cagr_3yr"] = _cagr(abs(_at(eps, -4)), abs(_last(eps)), 3)
+    elif ne >= 2:
+        r["eps_cagr_3yr"] = _cagr(abs(eps[0]), abs(_last(eps)), ne - 1)
+
+    # Operating leverage (op income growth / revenue growth, 3yr)
+    if n >= 4 and op and len(op) >= 4:
+        rv = _cagr(_at(rev, -4), _last(rev), 3)
+        ov = _cagr(max(_at(op, -4, 0.001), 0.001), max(_last(op), 0.001), 3)
+        r["operating_leverage"] = _div(ov, rv)
+
+    # ── PROFITABILITY ──────────────────────────────────────────────────────────
+
+    r["gross_margin"]         = _div(_last(gp), _last(rev))
+    r["operating_margin"]     = _div(_last(op), _last(rev)) if op else None
+    r["net_margin"]           = _div(_last(ni), _last(rev))
+
+    # 5-year margin trends
+    if gp and rev:
+        r["gross_margin_trend"]     = _trend([_div(g, rv) for g, rv in zip(gp, rev) if rv])
+    if op and rev:
+        r["operating_margin_trend"] = _trend([_div(o, rv) for o, rv in zip(op, rev) if rv])
+    if ni and rev:
+        r["net_margin_trend"]       = _trend([_div(n_, rv) for n_, rv in zip(ni, rev) if rv])
+
+    # ── CASH QUALITY ──────────────────────────────────────────────────────────
+
+    r["ocf_to_net_income"] = _div(_last(ocf), _last(ni)) if ocf and ni else None
+
+    if ni and ocf and assets:
+        r["accrual_ratio"] = _div(_last(ni) - _last(ocf), _last(assets))
+
+    r["fcf_margin"]      = _div(_last(fcf), _last(rev)) if fcf and rev else None
+    r["fcf_conversion"]  = _div(_last(fcf), _last(ni))  if fcf and ni  else None
+
+    # Receivables vs revenue growth (last 2 years — red flag signal)
+    if recv and len(recv) >= 3 and n >= 3:
+        r["recv_vs_rev_growth"] = (
+            (_cagr(_at(recv, -3), _last(recv), 2) or 0)
+            - (_cagr(_at(rev,  -3), _last(rev),  2) or 0)
+        )
+
+    # ── CAPITAL EFFICIENCY ────────────────────────────────────────────────────
+
+    # Effective tax rate
+    tax_rate = _median_tax_rate(tax, pre)
+    r["effective_tax_rate"] = tax_rate
+
+    # ROIC = NOPAT / Invested Capital  (for each year, then latest + trend)
+    roic_series = []
+    base = eb if eb else op
+    for i in range(min(len(base or []), len(eq or []), len(debt or []), len(cash or []))):
+        nopat = base[i] * (1 - tax_rate)
+        ic = eq[i] + debt[i] - cash[i]
+        roic_series.append(_div(nopat, ic))
+
+    roic_clean = [v for v in roic_series if v is not None]
+    if roic_clean:
+        r["roic"]          = roic_clean[-1]
+        r["roic_3yr_avg"]  = float(np.mean(roic_clean[-3:])) if len(roic_clean) >= 3 else roic_clean[-1]
+        r["roic_trend"]    = _trend(roic_clean)
+        if len(roic_clean) >= 2:
+            r["incremental_roic"] = roic_clean[-1] - roic_clean[-2]
+
+    # WACC
+    rf  = 0.045   # 10yr US Treasury
+    mrp = 0.055   # Equity risk premium (Damodaran)
+    beta = max(0.3, d["beta"])
+    coe  = rf + beta * mrp
+    r["cost_of_equity"] = coe
+
+    d_val  = _last(debt, 0)
+    c_val  = _last(cash, 0)
+    mc     = d["market_cap"]
+    net_d  = d_val - c_val
+    V      = mc + d_val
+
+    if ie and d_val > 0:
+        cod = abs(_last(ie)) / d_val
+    else:
+        cod = 0.045
+    r["cost_of_debt"] = cod
+
+    r["wacc"] = (
+        (_div(mc, V, 1.0) * coe) + (_div(d_val, V, 0.0) * cod * (1 - tax_rate))
+        if V > 0 else coe
+    )
+
+    if "roic" in r:
+        r["roic_minus_wacc"] = r["roic"] - r["wacc"]
+
+    # Reinvestment rate = Net capex / NOPAT
+    # Net capex = Capex - D&A
+    if capex and da and base:
+        nopat_latest = _last(base) * (1 - tax_rate)
+        net_capex    = _last(capex) - _last(da)
+        r["reinvestment_rate"] = _div(max(0.0, net_capex), nopat_latest) if nopat_latest > 0 else None
+
+    if "roic" in r and r.get("reinvestment_rate") is not None:
+        r["sustainable_growth_rate"] = r["roic"] * r["reinvestment_rate"]
+
+    # ROE & DuPont
+    if ni and eq:
+        roe_series = [_div(ni[i], eq[i]) for i in range(min(len(ni), len(eq)))]
+        roe_clean  = [v for v in roe_series if v is not None]
+        if roe_clean:
+            r["roe"]       = roe_clean[-1]
+            r["roe_trend"] = _trend(roe_clean)
+
+    if ni and rev and assets and eq:
+        r["dupont_net_margin"]      = _div(_last(ni), _last(rev))
+        r["dupont_asset_turnover"]  = _div(_last(rev), _last(assets))
+        r["dupont_equity_mult"]     = _div(_last(assets), _last(eq))
+
+    # ── BALANCE SHEET ─────────────────────────────────────────────────────────
+
+    r["net_debt"] = net_d
+
+    if ebitda and d_val is not None and c_val is not None:
+        r["net_debt_to_ebitda"] = _div(net_d, _last(ebitda)) if _last(ebitda, 0) > 0 else None
+
+    if eb and ie and _last(ie):
+        r["interest_coverage"] = _div(_last(eb), _last(ie))
+
+    if debt and eq:
+        r["debt_to_equity"] = _div(d_val, _last(eq))
+
+    if capex and rev:
+        r["capex_to_revenue"] = _div(_last(capex), _last(rev))
+
+    if da and rev:
+        r["da_to_revenue"] = _div(_last(da), _last(rev))
+
+    if gw and assets:
+        r["goodwill_to_assets"] = _div(_last(gw), _last(assets))
+
+    # ── DILUTION & CAPITAL ALLOCATION ─────────────────────────────────────────
+
+    nd = len(ds)
+    if nd >= 3:
+        r["share_count_cagr"] = _cagr(ds[0], ds[-1], nd - 1)
+    elif nd >= 2:
+        r["share_count_cagr"] = _cagr(ds[0], ds[-1], 1)
+
+    if sbc and rev:
+        r["sbc_to_revenue"] = _div(_last(sbc), _last(rev))
+
+    if sbc and fcf and _last(fcf):
+        r["sbc_to_fcf"] = _div(_last(sbc), abs(_last(fcf)))
+
+    # ── VALUATION ─────────────────────────────────────────────────────────────
+
+    fcf_v = _last(fcf)
+    if mc and fcf_v and fcf_v > 0:
+        r["price_to_fcf"] = _div(mc, fcf_v)
+        r["fcf_yield"]    = _div(fcf_v, mc)
+
+    ev = mc + d_val - c_val if mc else None
+    r["enterprise_value"] = ev
+
+    if ev and ebitda and _last(ebitda, 0) > 0:
+        r["ev_to_ebitda"] = _div(ev, _last(ebitda))
+
+    if ev and fcf_v and fcf_v > 0:
+        r["ev_to_fcf"] = _div(ev, fcf_v)
+
+    # ── SIMPLE DCF (intrinsic value estimate) ─────────────────────────────────
+    # Uses 2-stage DCF: high-growth 5yr + fade to terminal
+    # FCF growth based on 3yr historical average
+    shares_out = d["shares_outstanding"]
+    if fcf_v and fcf_v > 0 and shares_out and "wacc" in r:
+        wacc_r     = r["wacc"]
+        # Stage 1 growth: blend FCF CAGR with revenue CAGR.
+        # Pure FCF CAGR misleads for companies in heavy capex phases (e.g. MSFT/AMZN)
+        # where FCF is temporarily suppressed but revenue growth is the real signal.
+        rev_cagr = r.get("revenue_cagr_3yr") or r.get("revenue_cagr_5yr") or 0.05
+        if len(fcf) >= 4:
+            fcf_cagr = _cagr(_at(fcf, -4), fcf_v, 3)
+        else:
+            fcf_cagr = None
+
+        if fcf_cagr is not None and fcf_cagr > 0:
+            # Blend equally — revenue CAGR anchors when FCF is depressed by capex
+            fcf_growth = min(0.30, max(-0.05, (fcf_cagr + rev_cagr) / 2))
+        elif fcf_cagr is not None and fcf_cagr <= 0:
+            # FCF declining: be conservative but don't ignore revenue momentum
+            fcf_growth = min(0.30, max(-0.05, rev_cagr * 0.7))
+        else:
+            fcf_growth = min(0.30, max(0.03, rev_cagr * 0.6))
+
+        terminal_g = 0.025  # long-run terminal growth
+        fade       = (fcf_growth - terminal_g) / 5  # fade rate per year
+
+        pv_sum = 0.0
+        cf_t   = fcf_v
+        g_t    = fcf_growth
+        for t in range(1, 11):
+            if t <= 5:
+                cf_t *= (1 + g_t)
+            else:
+                g_t  = max(terminal_g, g_t - fade)
+                cf_t *= (1 + g_t)
+            pv_sum += cf_t / (1 + wacc_r) ** t
+
+        # Terminal value (Gordon Growth Model)
+        tv_cf  = cf_t * (1 + terminal_g)
+        tv     = tv_cf / (wacc_r - terminal_g) if (wacc_r - terminal_g) > 0 else 0
+        pv_tv  = tv / (1 + wacc_r) ** 10
+
+        intrinsic_total = (pv_sum + pv_tv + c_val - d_val)
+        r["dcf_intrinsic_value"] = max(0, intrinsic_total / shares_out)
+
+        cp = d["current_price"]
+        if cp and cp > 0 and r["dcf_intrinsic_value"] > 0:
+            r["dcf_upside_pct"] = (r["dcf_intrinsic_value"] - cp) / cp
+            r["dcf_growth_assumed"] = fcf_growth
+
+    return r
+

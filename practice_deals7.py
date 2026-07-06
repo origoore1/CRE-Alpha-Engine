@@ -11,8 +11,18 @@ Usage:
     python practice_deals.py --difficulty hard → filter by difficulty
 """
 import io, shutil, sys, argparse
-from datetime import datetime, date
+import datetime as _dtm  # stable alias: immune to test clock-patching of `date`
+from datetime import datetime, date, timedelta
 from pathlib import Path
+
+# ── design-date anchoring ─────────────────────────────────────────────────────
+# Lease dates in the deal configs are literals, written when each deal was
+# designed. Without correction, every deal's WAULT decays as real time passes
+# and verdicts silently flip (deal 12 drifted INVESTIGATE → DECLINE this way).
+# generate_practice_deal() shifts all lease dates by (today − design_date) so
+# each deal keeps its designed WAULT and verdict forever. A deal config may
+# carry its own "design_date"; otherwise this default applies.
+DESIGN_DATE_DEFAULT = date(2026, 5, 28)
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -694,6 +704,7 @@ SCENARIO ENGINE:
 
 {
     "id": 12, "difficulty": "ADVANCED", "verdict_expected": "INVESTIGATE",
+    "design_date": date(2024, 12, 1),  # anchors WAULT ≈ 2.2yr → mechanical INVESTIGATE as designed
     "title": "The Value-Add Trap — Kerken Woolworth Distressed",
     "learning_objective": "Understand why INVESTIGATE is the right mechanical score here — and why professional judgment upgrades it to DECLINE.",
     "teaching_notes": """
@@ -791,11 +802,22 @@ def generate_practice_deal(deal_config: dict, output_dir: str = '.') -> str:
 
     ws_rr = wb['Rent Roll']
     _clear_rent_roll(ws_rr)
+
+    # Shift lease dates so the deal behaves as it did on its design date
+    _design = deal_config.get("design_date", DESIGN_DATE_DEFAULT)
+    _shift = timedelta(days=(date.today() - _design).days)
+
+    def _sh(v):
+        # _dtm.date (not the module-global `date`) so the check still matches
+        # real date objects when tests replace `date` with a frozen subclass
+        return v + _shift if isinstance(v, _dtm.date) else v
+
     for i, tenant in enumerate(rr):
         row = RR_FIRST_DATA_ROW + i
         (unit_ref, tenant_name, sector, anchor, area_sqm, rent_sqm_mo,
          lease_start, lease_expiry, break_option, cpi_clause, cpi_pt, cpi_trig,
          sec_dep, svc_rec, rf_mo, notes) = tenant
+        lease_start, lease_expiry, break_option = _sh(lease_start), _sh(lease_expiry), _sh(break_option)
         ws_rr.cell(row=row, column=RR_COLS['unit_ref']).value          = unit_ref
         ws_rr.cell(row=row, column=RR_COLS['tenant']).value            = tenant_name
         ws_rr.cell(row=row, column=RR_COLS['sector']).value            = sector

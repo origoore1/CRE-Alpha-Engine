@@ -539,6 +539,11 @@ def compute_metrics(deal: dict, rr: pd.DataFrame,
         "icr":                  icr,
         "giy":                  giy,
         "niy":                  niy,
+        # German market convention (JLL/CBRE benchmarks): NIY on Total
+        # Acquisition Cost incl. GrESt & Erwerbsnebenkosten. "niy" above stays
+        # NOI / asking price (GRU's original convention) — use niy_on_tac when
+        # comparing against published prime/secondary yield benchmarks.
+        "niy_on_tac":           (noi / acq_cost) if acq_cost else None,
         "cash_on_cash":         cash_on_cash,
         "debt_yield":           (noi / loan_amount) if loan_amount > 0 else None,
         # AfA: 2% linear depreciation on building value (purchase price × 75%)
